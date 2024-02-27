@@ -9,7 +9,7 @@ metahuman_path = os.path.join(workPath, 'metahuman')
 print(workPath)
 sadTalker_path = workPath
 sys.path.append(sadTalker_path)
-from inference_func import inference
+from inference_func import SadTalker 
 
 class ObjDict(dict):
     """
@@ -75,9 +75,8 @@ def main():
     args.source_image = image_path
     # 生成视频
     print(args)
-    video_path = inference(args)
-    video_name = os.path.basename(video_path)
-    print(video_path)
+    sadTalker = SadTalker(args)
+    sadTalker.inference(args)
 
 if __name__ == '__main__':
     main()

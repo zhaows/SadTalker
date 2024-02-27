@@ -6,6 +6,7 @@ import warnings
 from skimage import img_as_ubyte
 import safetensors
 import safetensors.torch 
+from gfpgan import GFPGANer
 warnings.filterwarnings('ignore')
 
 
@@ -32,7 +33,7 @@ except:
 
 class AnimateFromCoeff():
 
-    def __init__(self, sadtalker_path, device):
+    def __init__(self, sadtalker_path, device, enhancer=None, background_enhancer=None):
 
         with open(sadtalker_path['facerender_yaml']) as f:
             config = yaml.safe_load(f)
@@ -82,6 +83,66 @@ class AnimateFromCoeff():
         self.mapping.eval()
          
         self.device = device
+
+        # ------------------------ set up GFPGAN restorer ------------------------
+        # restorer model
+        method = enhancer
+        if  method == 'gfpgan':
+            arch = 'clean'
+            channel_multiplier = 2
+            model_name = 'GFPGANv1.4'
+            url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth'
+        elif method == 'RestoreFormer':
+            arch = 'RestoreFormer'
+            channel_multiplier = 2
+            model_name = 'RestoreFormer'
+            url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/RestoreFormer.pth'
+        elif method == 'codeformer': # TODO:
+            arch = 'CodeFormer'
+            channel_multiplier = 2
+            model_name = 'CodeFormer'
+            url = 'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth'
+        else:
+            raise ValueError(f'Wrong model version {method}.')
+
+
+        # ------------------------ set up background upsampler ------------------------
+        bg_upsampler = background_enhancer
+        if bg_upsampler == 'realesrgan':
+            if not torch.cuda.is_available():  # CPU
+                import warnings
+                warnings.warn('The unoptimized RealESRGAN is slow on CPU. We do not use it. '
+                              'If you really want to use it, please modify the corresponding codes.')
+                bg_upsampler = None
+            else:
+                from basicsr.archs.rrdbnet_arch import RRDBNet
+                from realesrgan import RealESRGANer
+                model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+                bg_upsampler = RealESRGANer(
+                    scale=2,
+                    model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
+                    model=model,
+                    tile=400,
+                    tile_pad=10,
+                    pre_pad=0,
+                    half=True)  # need to set False in CPU mode
+        else:
+            bg_upsampler = None
+
+        # determine model paths
+        model_path = os.path.join(sadtalker_path['root_checkpoint_dir'], model_name + '.pth')
+        if not os.path.isfile(model_path):
+            # download pre-trained models from url
+            model_path = url
+
+        self.restorer = GFPGANer(
+            model_path=model_path,
+            upscale=2,
+            arch=arch,
+            channel_multiplier=channel_multiplier,
+            bg_upsampler=bg_upsampler)
+
+
     
     def load_cpk_facevid2vid_safetensor(self, checkpoint_path, generator=None, 
                         kp_detector=None, he_estimator=None,  
@@ -240,10 +301,10 @@ class AnimateFromCoeff():
             return_path = av_path_enhancer
 
             try:
-                enhanced_images_gen_with_len = enhancer_generator_with_len(full_video_path, method=enhancer, bg_upsampler=background_enhancer)
+                enhanced_images_gen_with_len = enhancer_generator_with_len(full_video_path, method=enhancer, bg_upsampler=background_enhancer, restorer=self.restorer)
                 imageio.mimsave(enhanced_path, enhanced_images_gen_with_len, fps=float(25))
             except:
-                enhanced_images_gen_with_len = enhancer_list(full_video_path, method=enhancer, bg_upsampler=background_enhancer)
+                enhanced_images_gen_with_len = enhancer_list(full_video_path, method=enhancer, bg_upsampler=background_enhancer, restorer=self.restorer)
                 imageio.mimsave(enhanced_path, enhanced_images_gen_with_len, fps=float(25))
             
             save_video_with_watermark(enhanced_path, new_audio_path, av_path_enhancer, watermark= False)
