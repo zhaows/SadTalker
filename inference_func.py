@@ -24,8 +24,11 @@ class SadTalker(object):
         print(sadtalker_paths)
         #init model
         self.preprocess_model = CropAndExtract(sadtalker_paths, device)
+        print('Preprocess model loaded')
         self.audio_to_coeff = Audio2Coeff(sadtalker_paths,  device)
+        print('Audio2Coeff model loaded')
         self.animate_from_coeff = AnimateFromCoeff(sadtalker_paths, device, enhancer=args.enhancer, background_enhancer=args.background_enhancer)
+        print('AnimateFromCoeff model loaded')
 
     def inference(self, args):
         #torch.backends.cudnn.enabled = False

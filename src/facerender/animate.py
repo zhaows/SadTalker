@@ -130,7 +130,9 @@ class AnimateFromCoeff():
             bg_upsampler = None
 
         # determine model paths
-        model_path = os.path.join(sadtalker_path['root_checkpoint_dir'], model_name + '.pth')
+        model_path = os.path.join('gfpgan/weights', model_name + '.pth')
+        if not os.path.isfile(model_path):
+            model_path = os.path.join(sadtalker_path['root_checkpoint_dir'], model_name + '.pth')
         if not os.path.isfile(model_path):
             # download pre-trained models from url
             model_path = url
