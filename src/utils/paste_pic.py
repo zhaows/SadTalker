@@ -3,6 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import uuid
 import imageio
+import concurrent.futures
 
 from src.utils.videoio import save_video_with_watermark 
 
@@ -56,8 +57,8 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
 
     tmp_path = str(uuid.uuid4())+'.mp4'
     #out_tmp = cv2.VideoWriter(tmp_path, cv2.VideoWriter_fourcc(*'MP4V'), fps, (frame_w, frame_h))
-    result = []
-    for crop_frame in tqdm(crop_frames, 'seamlessClone:'):
+    #for crop_frame in tqdm(crop_frames, 'seamlessClone:'):
+    def process_image(crop_frame):
         p = cv2.resize(crop_frame.astype(np.uint8), (ox2-ox1, oy2 - oy1)) 
 
         mask = 255*np.ones(p.shape, p.dtype)
@@ -66,6 +67,11 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
         gen_img = cv2.cvtColor(gen_img, cv2.COLOR_BGR2RGB)
         result.append(gen_img)
         #out_tmp.write(gen_img)
+    result = []
+    max_threads = 8
+    with concurrent.futures.ThreadPoolExecutor(max_threads) as executor:
+        for gen_img in tqdm(executor.map(process_image, crop_frames), total=len(crop_frames), desc='seamlessClone:'):
+            result.append(gen_img)
     imageio.mimsave(tmp_path, result, fps=fps)
     #out_tmp.release()
 

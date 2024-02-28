@@ -31,6 +31,7 @@ def get_args():
     args.source_image = ''
     args.result_dir = metahuman_path
     args.enhancer = 'gfpgan'
+    args.enhancer = None
     # args.enhancer = 'RestoreFormer'
     args.preprocess = 'full'
     args.still = True
@@ -39,7 +40,7 @@ def get_args():
     args.ref_pose = None
     args.checkpoint_dir = os.path.join(sadTalker_path, 'checkpoints')
     args.pose_style = 8
-    args.batch_size = 1
+    args.batch_size = 16
     args.size = 256
     args.expression_scale = 1.0
     args.input_yaw = None
