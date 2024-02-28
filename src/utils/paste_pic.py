@@ -7,7 +7,7 @@ import concurrent.futures
 
 from src.utils.videoio import save_video_with_watermark 
 
-def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, extended_crop=False):
+def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, extended_crop=False, max_threads=8):
 
     if not os.path.isfile(pic_path):
         raise ValueError('pic_path must be a valid path to video/image file')
@@ -65,13 +65,13 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
         gen_img = cv2.cvtColor(gen_img, cv2.COLOR_BGR2RGB)
         return gen_img
     result = []
-    out_tmp = cv2.VideoWriter(tmp_path, cv2.VideoWriter_fourcc(*'MP4V'), fps, (frame_w, frame_h))
-    max_threads = 8
+    out_tmp = cv2.VideoWriter(tmp_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (frame_w, frame_h))
     with concurrent.futures.ThreadPoolExecutor(max_threads) as executor:
         for gen_img in tqdm(executor.map(process_image, crop_frames), total=len(crop_frames), desc='seamlessClone:'):
             result.append(gen_img)
-            out_tmp.write(gen_img)
     #imageio.mimsave(tmp_path, result, fps=fps)
+    for img in result:
+        out_tmp.write(img)
     out_tmp.release()
 
     save_video_with_watermark(tmp_path, new_audio_path, full_video_path, watermark=False)
