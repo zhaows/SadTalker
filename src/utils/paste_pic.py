@@ -65,8 +65,9 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
         location = ((ox1+ox2) // 2, (oy1+oy2) // 2)
         gen_img = cv2.seamlessClone(p, full_img, mask, location, cv2.NORMAL_CLONE)
         gen_img = cv2.cvtColor(gen_img, cv2.COLOR_BGR2RGB)
-        result.append(gen_img)
+        #result.append(gen_img)
         #out_tmp.write(gen_img)
+        return gen_img
     result = []
     max_threads = 8
     with concurrent.futures.ThreadPoolExecutor(max_threads) as executor:
