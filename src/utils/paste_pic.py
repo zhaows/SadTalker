@@ -2,6 +2,7 @@ import cv2, os
 import numpy as np
 from tqdm import tqdm
 import uuid
+import imageio
 
 from src.utils.videoio import save_video_with_watermark 
 
@@ -54,16 +55,19 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
             oy1, oy2, ox1, ox2 = cly+ly, cly+ry, clx+lx, clx+rx
 
     tmp_path = str(uuid.uuid4())+'.mp4'
-    out_tmp = cv2.VideoWriter(tmp_path, cv2.VideoWriter_fourcc(*'MP4V'), fps, (frame_w, frame_h))
+    #out_tmp = cv2.VideoWriter(tmp_path, cv2.VideoWriter_fourcc(*'MP4V'), fps, (frame_w, frame_h))
+    result = []
     for crop_frame in tqdm(crop_frames, 'seamlessClone:'):
         p = cv2.resize(crop_frame.astype(np.uint8), (ox2-ox1, oy2 - oy1)) 
 
         mask = 255*np.ones(p.shape, p.dtype)
         location = ((ox1+ox2) // 2, (oy1+oy2) // 2)
         gen_img = cv2.seamlessClone(p, full_img, mask, location, cv2.NORMAL_CLONE)
-        out_tmp.write(gen_img)
-
-    out_tmp.release()
+        gen_img = cv2.cvtColor(gen_img, cv2.COLOR_BGR2RGB)
+        result.append(gen_img)
+        #out_tmp.write(gen_img)
+    imageio.mimsave(tmp_path, result, fps=fps)
+    #out_tmp.release()
 
     save_video_with_watermark(tmp_path, new_audio_path, full_video_path, watermark=False)
     os.remove(tmp_path)

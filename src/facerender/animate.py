@@ -102,6 +102,8 @@ class AnimateFromCoeff():
             channel_multiplier = 2
             model_name = 'CodeFormer'
             url = 'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth'
+        elif method is None:
+            pass
         else:
             raise ValueError(f'Wrong model version {method}.')
 
@@ -129,20 +131,22 @@ class AnimateFromCoeff():
         else:
             bg_upsampler = None
 
-        # determine model paths
-        model_path = os.path.join('gfpgan/weights', model_name + '.pth')
-        if not os.path.isfile(model_path):
-            model_path = os.path.join(sadtalker_path['root_checkpoint_dir'], model_name + '.pth')
-        if not os.path.isfile(model_path):
-            # download pre-trained models from url
-            model_path = url
+        self.restorer = None
+        if method is not None:
+            # determine model paths
+            model_path = os.path.join('gfpgan/weights', model_name + '.pth')
+            if not os.path.isfile(model_path):
+                model_path = os.path.join(sadtalker_path['root_checkpoint_dir'], model_name + '.pth')
+            if not os.path.isfile(model_path):
+                # download pre-trained models from url
+                model_path = url
 
-        self.restorer = GFPGANer(
-            model_path=model_path,
-            upscale=2,
-            arch=arch,
-            channel_multiplier=channel_multiplier,
-            bg_upsampler=bg_upsampler)
+            self.restorer = GFPGANer(
+                model_path=model_path,
+                upscale=2,
+                arch=arch,
+                channel_multiplier=channel_multiplier,
+                bg_upsampler=bg_upsampler)
 
 
     
