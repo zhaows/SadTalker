@@ -101,7 +101,7 @@ class GFPGANer():
         self.gfpgan = self.gfpgan.to(self.device)
 
     @torch.no_grad()
-    def enhance_face(faces, batch_size = 8, weight=0.5):
+    def enhance_face(self, faces, batch_size = 8, weight=0.5):
         def process_face(face):
             face_t = img2tensor(face / 255., bgr2rgb=True, float32=True)
             normalize(face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
