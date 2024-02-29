@@ -6,7 +6,7 @@ import warnings
 from skimage import img_as_ubyte
 import safetensors
 import safetensors.torch 
-from gfpgan import GFPGANer
+from gfpgan_util import GFPGANer
 warnings.filterwarnings('ignore')
 
 
