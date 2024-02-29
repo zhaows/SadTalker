@@ -289,6 +289,7 @@ class AnimateFromCoeff():
         word1=sound.set_frame_rate(16000)
         word = word1[start_time:end_time]
         word.export(new_audio_path, format="wav")
+        print(f'temp_path: {temp_path}, new_audio_path: {new_audio_path}, output_video_path: {output_video_path}')
 
         if 'full' in preprocess.lower():
             # only add watermark to the full image.
@@ -296,6 +297,7 @@ class AnimateFromCoeff():
             temp_path = os.path.join(video_save_dir, 'temp_'+video_name_full)
             output_video_path = os.path.join(video_save_dir, video_name_full) 
             frames_result = paste_pic(frames_result, pic_path, crop_info, extended_crop= True if 'ext' in preprocess.lower() else False, max_threads=batch_size)
+            print(f'temp_path: {temp_path}, new_audio_path: {new_audio_path}, output_video_path: {output_video_path}')
             #print(f'The generated video is named {video_save_dir}/{video_name_full}') 
 
         #### paste back then enhancers
@@ -304,6 +306,7 @@ class AnimateFromCoeff():
             temp_path = os.path.join(video_save_dir, 'temp_'+video_name_enhancer)
             output_video_path = os.path.join(video_save_dir, video_name_enhancer)
             frames_result = enhancer_generator_with_len(frames_result, method=enhancer, bg_upsampler=background_enhancer, restorer=self.restorer)
+            print(f'temp_path: {temp_path}, new_audio_path: {new_audio_path}, output_video_path: {output_video_path}')
 
         imageio.mimsave(temp_path, frames_result,  fps=float(25))
         save_video_with_watermark(temp_path, new_audio_path, output_video_path, watermark= False)
