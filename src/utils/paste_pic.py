@@ -6,8 +6,9 @@ import imageio
 import concurrent.futures
 
 from src.utils.videoio import save_video_with_watermark 
+from src.utils.videoio import load_video_to_cv2
 
-def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, extended_crop=False, max_threads=8):
+def paste_pic(images, pic_path, crop_info, extended_crop=False, max_threads=8):
 
     if not os.path.isfile(pic_path):
         raise ValueError('pic_path must be a valid path to video/image file')
@@ -29,7 +30,11 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
     frame_h = full_img.shape[0]
     frame_w = full_img.shape[1]
 
-    video_stream = cv2.VideoCapture(video_path)
+    crop_frames = images
+    if type(images) == str and os.path.isfile(images):
+        crop_frames = load_video_to_cv2(images)
+    '''
+    video_stream = cv2.VideoCapture(images)
     fps = video_stream.get(cv2.CAP_PROP_FPS)
     crop_frames = []
     while 1:
@@ -38,6 +43,7 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
             video_stream.release()
             break
         crop_frames.append(frame)
+    '''
     
     if len(crop_info) != 3:
         print("you didn't crop the image")
@@ -69,6 +75,8 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
     with concurrent.futures.ThreadPoolExecutor(max_threads) as executor:
         for gen_img in tqdm(executor.map(process_image, crop_frames), total=len(crop_frames), desc='seamlessClone:'):
             result.append(gen_img)
+    return result
+    '''
     imageio.mimsave(tmp_path, result, fps=fps)
     #for img in result:
     #    out_tmp.write(img)
@@ -76,3 +84,4 @@ def paste_pic(video_path, pic_path, crop_info, new_audio_path, full_video_path, 
 
     save_video_with_watermark(tmp_path, new_audio_path, full_video_path, watermark=False)
     os.remove(tmp_path)
+    '''

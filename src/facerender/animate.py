@@ -274,12 +274,9 @@ class AnimateFromCoeff():
         
         # save to video
         video_name = x['video_name']  + '.mp4'
-        path = os.path.join(video_save_dir, 'temp_'+video_name)
-        
-        imageio.mimsave(path, result,  fps=float(25))
-
-        av_path = os.path.join(video_save_dir, video_name)
-        return_path = av_path 
+        frames_result = result
+        temp_path = os.path.join(video_save_dir, 'temp_'+video_name)
+        output_video_path = os.path.join(video_save_dir, video_name)
         
         audio_path =  x['audio_path'] 
         audio_name = os.path.splitext(os.path.split(audio_path)[-1])[0]
@@ -293,37 +290,26 @@ class AnimateFromCoeff():
         word = word1[start_time:end_time]
         word.export(new_audio_path, format="wav")
 
-        save_video_with_watermark(path, new_audio_path, av_path, watermark= False)
-        print(f'The generated video is named {video_save_dir}/{video_name}') 
-
         if 'full' in preprocess.lower():
             # only add watermark to the full image.
             video_name_full = x['video_name']  + '_full.mp4'
-            full_video_path = os.path.join(video_save_dir, video_name_full)
-            return_path = full_video_path
-            paste_pic(path, pic_path, crop_info, new_audio_path, full_video_path, extended_crop= True if 'ext' in preprocess.lower() else False, max_threads=batch_size)
-            print(f'The generated video is named {video_save_dir}/{video_name_full}') 
-        else:
-            full_video_path = av_path 
+            temp_path = os.path.join(video_save_dir, 'temp_'+video_name_full)
+            output_video_path = os.path.join(video_save_dir, video_name_full) 
+            frames_result = paste_pic(frames_result, pic_path, crop_info, extended_crop= True if 'ext' in preprocess.lower() else False, max_threads=batch_size)
+            #print(f'The generated video is named {video_save_dir}/{video_name_full}') 
+
         #### paste back then enhancers
         if enhancer:
             video_name_enhancer = x['video_name']  + '_enhanced.mp4'
-            enhanced_path = os.path.join(video_save_dir, 'temp_'+video_name_enhancer)
-            av_path_enhancer = os.path.join(video_save_dir, video_name_enhancer) 
-            return_path = av_path_enhancer
+            temp_path = os.path.join(video_save_dir, 'temp_'+video_name_enhancer)
+            output_video_path = os.path.join(video_save_dir, video_name_enhancer)
+            frames_result = enhancer_generator_with_len(frames_result, method=enhancer, bg_upsampler=background_enhancer, restorer=self.restorer)
 
-            try:
-                enhanced_images_gen_with_len = enhancer_generator_with_len(full_video_path, method=enhancer, bg_upsampler=background_enhancer, restorer=self.restorer)
-                imageio.mimsave(enhanced_path, enhanced_images_gen_with_len, fps=float(25))
-            except:
-                enhanced_images_gen_with_len = enhancer_list(full_video_path, method=enhancer, bg_upsampler=background_enhancer, restorer=self.restorer)
-                imageio.mimsave(enhanced_path, enhanced_images_gen_with_len, fps=float(25))
-            
-            save_video_with_watermark(enhanced_path, new_audio_path, av_path_enhancer, watermark= False)
-            print(f'The generated video is named {video_save_dir}/{video_name_enhancer}')
-            os.remove(enhanced_path)
-        os.remove(path)
-        os.remove(new_audio_path)
+        imageio.mimsave(temp_path, frames_result,  fps=float(25))
+        save_video_with_watermark(temp_path, new_audio_path, output_video_path, watermark= False)
+        print(f'The generated video is named {output_video_path}')
+        #os.remove(temp_path)
+        #os.remove(new_audio_path)
 
-        return return_path
+        return output_video_path
 
