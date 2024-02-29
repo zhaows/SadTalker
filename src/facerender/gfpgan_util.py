@@ -103,7 +103,9 @@ class GFPGANer():
 
     @torch.no_grad()
     def enhance_face(self, faces, batch_size = 8, weight=0.5):
+        origin_h, origin_w = faces[0].shape[:2]
         def process_face(face):
+            face = cv2.resize(face, (512, 512))
             face_t = img2tensor(face / 255., bgr2rgb=True, float32=True)
             normalize(face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
             face_t = face_t.unsqueeze(0).to(self.device)
@@ -123,6 +125,7 @@ class GFPGANer():
             for i in range(len(output)):
                 restored_face = tensor2img(output[i].squeeze(0), rgb2bgr=True, min_max=(-1, 1))
                 restored_face = restored_face.astype('uint8')
+                restored_face = cv2.resize(restored_face, (origin_w, origin_h))
                 restored_faces.append(restored_face)
         return restored_faces
 
