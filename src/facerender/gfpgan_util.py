@@ -1,6 +1,7 @@
 import cv2
 import os
 import torch
+from tqdm import tqdm
 from basicsr.utils import img2tensor, tensor2img
 from basicsr.utils.download_util import load_file_from_url
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
