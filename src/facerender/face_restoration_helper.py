@@ -7,6 +7,8 @@ from torchvision.transforms.functional import normalize
 from facexlib.detection import init_detection_model
 from facexlib.parsing import init_parsing_model
 from facexlib.utils.misc import img2tensor, imwrite
+import threading
+lock = threading.Lock()
 
 
 def get_largest_face(det_faces, h, w):
@@ -141,8 +143,9 @@ class FaceRestoreHelper(object):
             h, w = int(h / scale), int(w / scale)
             input_img = cv2.resize(self.input_img, (w, h), interpolation=cv2.INTER_LANCZOS4)
 
-        with torch.no_grad():
-            bboxes = self.face_det.detect_faces(input_img, 0.97) * scale
+        with lock:
+            with torch.no_grad():
+                bboxes = self.face_det.detect_faces(input_img, 0.97) * scale
         for bbox in bboxes:
             # remove faces with too small eye distance: side faces or too small faces
             eye_dist = np.linalg.norm([bbox[5] - bbox[7], bbox[6] - bbox[8]])
@@ -311,8 +314,9 @@ class FaceRestoreHelper(object):
                 face_input = img2tensor(face_input.astype('float32') / 255., bgr2rgb=True, float32=True)
                 normalize(face_input, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
                 face_input = torch.unsqueeze(face_input, 0).to(self.device)
-                with torch.no_grad():
-                    out = self.face_parse(face_input)[0]
+                with lock:
+                    with torch.no_grad():
+                        out = self.face_parse(face_input)[0]
                 out = out.argmax(dim=1).squeeze().cpu().numpy()
 
                 mask = np.zeros(out.shape)

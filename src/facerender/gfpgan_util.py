@@ -14,6 +14,8 @@ import concurrent.futures
 
 from facexlib.detection import init_detection_model
 from facexlib.parsing import init_parsing_model
+import threading
+lock = threading.Lock()
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -164,7 +166,8 @@ class GFPGANer():
             cropped_face_t = cropped_face_t.unsqueeze(0).to(self.device)
 
             try:
-                output = self.gfpgan(cropped_face_t, return_rgb=False, weight=weight)[0]
+                with lock:
+                    output = self.gfpgan(cropped_face_t, return_rgb=False, weight=weight)[0]
                 # convert to image
                 restored_face = tensor2img(output.squeeze(0), rgb2bgr=True, min_max=(-1, 1))
             except RuntimeError as error:
