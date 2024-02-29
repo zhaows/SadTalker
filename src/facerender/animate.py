@@ -6,7 +6,7 @@ import warnings
 from skimage import img_as_ubyte
 import safetensors
 import safetensors.torch 
-from gfpgan_util import GFPGANer
+from src.facerender.gfpgan_util import GFPGANer
 warnings.filterwarnings('ignore')
 
 
@@ -265,7 +265,12 @@ class AnimateFromCoeff():
         original_size = crop_info[0]
         if original_size:
             result = [ cv2.resize(result_i,(img_size, int(img_size * original_size[1]/original_size[0]) )) for result_i in result ]
+
+        # face enhance
+        if enhancer:
+            result = self.restorer.enhance_face(result, batch_size=batch_size)
         
+        # save to video
         video_name = x['video_name']  + '.mp4'
         path = os.path.join(video_save_dir, 'temp_'+video_name)
         
@@ -298,7 +303,7 @@ class AnimateFromCoeff():
             print(f'The generated video is named {video_save_dir}/{video_name_full}') 
         else:
             full_video_path = av_path 
-
+        '''
         #### paste back then enhancers
         if enhancer:
             video_name_enhancer = x['video_name']  + '_enhanced.mp4'
@@ -316,7 +321,7 @@ class AnimateFromCoeff():
             save_video_with_watermark(enhanced_path, new_audio_path, av_path_enhancer, watermark= False)
             print(f'The generated video is named {video_save_dir}/{video_name_enhancer}')
             os.remove(enhanced_path)
-
+        '''
         os.remove(path)
         os.remove(new_audio_path)
 

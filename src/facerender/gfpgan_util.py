@@ -9,6 +9,8 @@ from torchvision.transforms.functional import normalize
 from gfpgan.archs.gfpgan_bilinear_arch import GFPGANBilinear
 from gfpgan.archs.gfpganv1_arch import GFPGANv1
 from gfpgan.archs.gfpganv1_clean_arch import GFPGANv1Clean
+import concurrent.futures
+
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -97,6 +99,31 @@ class GFPGANer():
         self.gfpgan.load_state_dict(loadnet[keyname], strict=True)
         self.gfpgan.eval()
         self.gfpgan = self.gfpgan.to(self.device)
+
+    @torch.no_grad()
+    def enhance_face(faces, batch_size = 8, weight=0.5):
+        def process_face(face):
+            face_t = img2tensor(face / 255., bgr2rgb=True, float32=True)
+            normalize(face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
+            face_t = face_t.unsqueeze(0).to(self.device)
+            return face_t
+
+        max_threads = min(batch_size, len(faces))
+        result = []
+        with concurrent.futures.ThreadPoolExecutor(max_threads) as executor:
+            for gen_img in tqdm(executor.map(process_face, faces), total=len(faces), desc='face enhance preprocess:'):
+                result.append(gen_img)
+        # face restoration
+        restored_faces = []
+        batchs = [result[i:i + batch_size] for i in range(0, len(result), batch_size)]
+        for batch in tqdm(batchs, desc='face enhance:'):
+            batch = torch.cat(batch, dim=0)
+            output = self.gfpgan(batch, return_rgb=False, weight=weight)
+            for i in range(len(output)):
+                restored_face = tensor2img(output[i].squeeze(0), rgb2bgr=True, min_max=(-1, 1))
+                restored_face = restored_face.astype('uint8')
+                restored_faces.append(restored_face)
+        return restored_faces
 
     @torch.no_grad()
     def enhance(self, img, has_aligned=False, only_center_face=False, paste_back=True, weight=0.5):
