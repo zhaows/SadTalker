@@ -121,7 +121,7 @@ def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan'
         return r_img
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
-        for r_img in tqdm(executor.map(process_image, images), total=len(images), 'Face Enhancer:'):
+        for r_img in tqdm(executor.map(process_image, images), total=len(images), desc='Face Enhancer:'):
             yield r_img
 
     '''
