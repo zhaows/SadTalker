@@ -63,6 +63,7 @@ def paste_pic(images, pic_path, crop_info, extended_crop=False, max_threads=8):
 
     tmp_path = str(uuid.uuid4())+'.mp4'
     def process_image(crop_frame):
+        p = cv2.cvtColor(crop_frame, cv2.COLOR_RGB2BGR)
         p = cv2.resize(crop_frame.astype(np.uint8), (ox2-ox1, oy2 - oy1)) 
 
         mask = 255*np.ones(p.shape, p.dtype)
