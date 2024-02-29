@@ -121,7 +121,7 @@ class GFPGANer():
         batchs = [result[i:i + batch_size] for i in range(0, len(result), batch_size)]
         for batch in tqdm(batchs, desc='face enhance:'):
             batch = torch.cat(batch, dim=0)
-            output = self.gfpgan(batch, return_rgb=False, weight=weight)
+            output = self.gfpgan(batch, return_rgb=False, weight=weight)[0]
             for i in range(len(output)):
                 restored_face = tensor2img(output[i].squeeze(0), rgb2bgr=True, min_max=(-1, 1))
                 restored_face = restored_face.astype('uint8')
