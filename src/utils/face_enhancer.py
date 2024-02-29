@@ -8,6 +8,7 @@ from tqdm import tqdm
 from src.utils.videoio import load_video_to_cv2
 
 import cv2
+import concurrent.futures
 
 
 class GeneratorWithLen(object):
@@ -39,7 +40,7 @@ def enhancer_generator_with_len(images, method='gfpgan', bg_upsampler='realesrga
     gen_with_len = GeneratorWithLen(gen, len(images))
     return gen_with_len
 
-def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan', restorer=None):
+def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan', restorer=None, max_threads=8):
     """ Provide a generator function so that all of the enhanced images don't need
     to be stored in memory at the same time. This can save tons of RAM compared to
     the enhancer function. """
@@ -109,6 +110,21 @@ def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan'
             bg_upsampler=bg_upsampler)
 
     # ------------------------ restore ------------------------
+    def process_image(img):
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        cropped_faces, restored_faces, r_img = restorer.enhance(
+            img,
+            has_aligned=False,
+            only_center_face=False,
+            paste_back=True)
+        r_img = cv2.cvtColor(r_img, cv2.COLOR_BGR2RGB)
+        return r_img
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
+        for r_img in tqdm(executor.map(process_image, images), 'Face Enhancer:'):
+            yield r_img
+
+    '''
     for idx in tqdm(range(len(images)), 'Face Enhancer:'):
         
         img = cv2.cvtColor(images[idx], cv2.COLOR_RGB2BGR)
@@ -122,3 +138,4 @@ def enhancer_generator_no_len(images, method='gfpgan', bg_upsampler='realesrgan'
         
         r_img = cv2.cvtColor(r_img, cv2.COLOR_BGR2RGB)
         yield r_img
+    '''

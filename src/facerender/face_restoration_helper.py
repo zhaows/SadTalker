@@ -58,7 +58,9 @@ class FaceRestoreHelper(object):
                  pad_blur=False,
                  use_parse=False,
                  device=None,
-                 model_rootpath=None):
+                 model_rootpath=None, 
+                 face_det=None,
+                 face_parse=None):
         self.template_3points = template_3points  # improve robustness
         self.upscale_factor = upscale_factor
         # the cropped face ratio based on the square face
@@ -96,11 +98,15 @@ class FaceRestoreHelper(object):
             self.device = device
 
         # init face detection model
-        self.face_det = init_detection_model(det_model, half=False, device=self.device, model_rootpath=model_rootpath)
+        self.face_det = face_det
+        if self.face_det is None:
+            self.face_det = init_detection_model(det_model, half=False, device=self.device, model_rootpath=model_rootpath)
 
         # init face parsing model
         self.use_parse = use_parse
-        self.face_parse = init_parsing_model(model_name='parsenet', device=self.device, model_rootpath=model_rootpath)
+        self.face_parse = face_parse
+        if self.face_parse is None:
+            self.face_parse = init_parsing_model(model_name='parsenet', device=self.device, model_rootpath=model_rootpath)
 
     def set_upscale_factor(self, upscale_factor):
         self.upscale_factor = upscale_factor
