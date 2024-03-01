@@ -323,6 +323,8 @@ class FaceRestoreHelper(object):
                 MASK_COLORMAP = [0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 255, 0, 0, 0]
                 for idx, color in enumerate(MASK_COLORMAP):
                     mask[out == idx] = color
+                face_input = None
+                out = None
                 #  blur the mask
                 mask = cv2.GaussianBlur(mask, (101, 101), 11)
                 mask = cv2.GaussianBlur(mask, (101, 101), 11)
@@ -337,6 +339,7 @@ class FaceRestoreHelper(object):
                 mask = cv2.resize(mask, restored_face.shape[:2])
                 mask = cv2.warpAffine(mask, inverse_affine, (w_up, h_up), flags=3)
                 inv_soft_mask = mask[:, :, None]
+                mask = None
                 pasted_face = inv_restored
 
             else:  # use square parse maps
